@@ -7,10 +7,7 @@
 require('./bootstrap');
 
 window.Vue = require('vue');
-//import vuetify from './plugin/vuetify';
 import 'vuetify/dist/vuetify.min.css';
-
-//import Vue from 'vue';
 import Vuetify from 'vuetify';
 import '@mdi/font/css/materialdesignicons.css';
 Vue.use(Vuetify);
