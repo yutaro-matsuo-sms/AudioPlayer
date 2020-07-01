@@ -1,7 +1,7 @@
 <template>
   <v-app>
     <v-toolbar dark color="primary">
-      <v-toolbar-title white--text>Music Metronome</v-toolbar-title>
+      <v-toolbar-title white--text>Audio Player</v-toolbar-title>
     </v-toolbar>
     <v-card class="transparent">
       <v-container fluid grid-list-xs>

@@ -1,9 +1,9 @@
 <template>
-  <v-container>
+  <v-container v-if="songs[songIndex]">
     <v-layout low, wrap>
-      <v-flex xs12>
+      <v-flex v-if="songs[songIndex]" xs12>
         <v-card class="mx-auto" max-width="320">
-          <v-img height="220px" :src="songs[songIndex].img" />
+          <v-img height="220px" :src="songs[songIndex].image" />
         </v-card>
         <v-card-text>{{songs[songIndex].name}}</v-card-text>
         <v-card-text>{{songs[songIndex].artist}}</v-card-text>
@@ -47,7 +47,7 @@
         <v-icon dark color="primary" @click.prevent="showPlayList">mdi-format-list-bulleted</v-icon>
       </v-flex>
       <v-flex text-md-center>
-        <template v-if="!songs[songIndex].isFav">
+        <template v-if="!songs[songIndex].is_favorite">
           <v-icon dark color="primary" @click.prevent="changeFavorite">mdi-heart-outline</v-icon>
         </template>
         <template v-else>
@@ -80,33 +80,16 @@
 
 <script>
 import { Howl, Howler } from "howler";
+import { getSongs, updateSong } from "../../lib/api-service";
 export default {
   name: "AudioPlayer",
   compornents: {},
   data: function() {
     return {
-      songs: [
-        {
-          id: 1,
-          name: "流星 -demo-",
-          artist: "Unknown",
-          img: "/music/img/ryusei.jpg",
-          song: "/music/audio/ryusei.mp3",
-          isFav: false
-        },
-        {
-          id: 2,
-          name: "1118",
-          artist: "Unknown",
-          img: "/music/img/1118.jpg",
-          song: "/music/audio/1118.mp3",
-          isFav: false
-        }
-      ],
+      songs: [],
       audio: {
         song: null
       },
-      isPlay: false,
       duration: 0,
       currentTime: 0,
       timer: null,
@@ -116,43 +99,52 @@ export default {
     };
   },
   mounted: function() {
-    this.audio.song = new Howl({
-      src: this.songs[this.songIndex].song,
-      volume: this.toVol
-    });
-    this.audio.song.on("load", () => {
-      this.duration = this.audio.song.duration();
-    });
-    this.audio.song.on("play", () => {
-      this.timer = setInterval(() => {
-        let seek = this.audio.song.seek();
-        this.currentTime = seek;
-      }, 200);
-    });
-    this.audio.song.on("pause", () => {
-      clearInterval(this.timer);
-      this.isPlay = false;
-    });
-    this.audio.song.on("stop", () => {
-      clearInterval(this.timer);
-      this.isPlay = false;
-    });
-    this.audio.song.on("end", () => {
-      clearInterval(this.timer);
-      this.currentTime = 0;
-      this.songIndex += 1;
+    this.loadSongs();
+  },
+  methods: {
+    async loadSongs() {
+      try {
+        this.songs = await getSongs();
+        this.initHowl();
+      } catch (e) {
+        this.songs = [];
+        console.log(e);
+      }
+    },
+    initHowl() {
       this.audio.song = new Howl({
         src: this.songs[this.songIndex].song,
         volume: this.toVol
       });
-      this.audio.song.once("load", () => {
-        this.duration = this.audi.song.duration();
+      this.audio.song.on("load", () => {
+        this.duration = this.audio.song.duration();
       });
-      this.play();
-      this.isPlay = true;
-    });
-  },
-  methods: {
+      this.audio.song.on("play", () => {
+        this.timer = setInterval(() => {
+          let seek = this.audio.song.seek();
+          this.currentTime = seek;
+        }, 200);
+      });
+      this.audio.song.on("pause", () => {
+        clearInterval(this.timer);
+      });
+      this.audio.song.on("stop", () => {
+        clearInterval(this.timer);
+      });
+      this.audio.song.on("end", () => {
+        clearInterval(this.timer);
+        this.currentTime = 0;
+        this.songIndex += 1;
+        this.audio.song = new Howl({
+          src: this.songs[this.songIndex].song,
+          volume: this.toVol
+        });
+        this.audio.song.once("load", () => {
+          this.duration = this.audi.song.duration();
+        });
+        this.play();
+      });
+    },
     showPlayList() {
       return (this.onPlayList = !this.onPlayList);
     },
@@ -168,44 +160,34 @@ export default {
     },
     play() {
       this.playAudio(this.audio.song);
-      this.isPlay = true;
     },
     pause() {
       this.audio.song.pause();
-      this.isPlay = false;
     },
     prev() {
+      const currentSt = this.isPlay;
       this.audio.song.stop();
+      this.currentTime = 0;
       this.songIndex -= 1;
       if (this.songIndex < 0) {
         this.songIndex = this.songs.length - 1;
       }
-      this.audio.song = new Howl({
-        src: this.songs[this.songIndex].song,
-        volume: this.toVol
-      });
-      this.audio.song.once("load", () => {
-        this.duration = this.audi.song.duration();
-      });
-      if (this.isPlay) {
+      this.initHowl();
+      if (currentSt === true) {
+        console.log('きてます');
         this.audio.song.play();
       }
     },
     next() {
+      const currentSt = this.isPlay;
       this.audio.song.stop();
+      this.currentTime = 0;
       this.songIndex += 1;
       if (this.songIndex > this.songs.length - 1) {
         this.songIndex = 0;
       }
-      this.audio.song = new Howl({
-        src: this.songs[this.songIndex].song,
-        volume: this.toVol
-      });
-      this.audio.song.once("load", () => {
-        this.duration = this.audi.song.duration();
-      });
-
-      if (this.isPlay) {
+      this.initHowl();
+      if (currentSt === true) {
         this.audio.song.play();
       }
     },
@@ -213,9 +195,19 @@ export default {
       this.audio.song.stop();
       this.playChangeSeek(seek);
     },
-    changeFavorite() {
-      return (this.songs[this.songIndex].isFav = !this.songs[this.songIndex]
-        .isFav);
+    async changeFavorite() {
+      this.songs[this.songIndex].is_favorite = !this.songs[this.songIndex]
+        .is_favorite;
+      try {
+        await updateSong(
+          this.songs[this.songIndex].id,
+          this.songs[this.songIndex]
+        );
+      } catch (e) {
+        console.log(e);
+        this.songs[this.songIndex].is_favorite = !this.songs[this.songIndex]
+          .is_favorite;
+      }
     },
     padZero(v) {
       if (v < 10) {
@@ -253,6 +245,9 @@ export default {
     },
     toVol() {
       return this.audioVol / 100;
+    },
+    isPlay() {
+      return this.audio.song.playing() === true;
     }
   },
   watch: {

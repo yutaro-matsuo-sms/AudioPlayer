@@ -17,3 +17,8 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('auth:api')->get('/user', function (Request $request) {
     return $request->user();
 });
+
+Route::get('/songs', 'SongController@index');
+Route::post('/songs', 'SongController@insert');
+Route::put('/songs/{song}', 'SongController@update');
+Route::delete('/songs/{song}', 'SongController@delete');
