@@ -9,7 +9,7 @@ class SongController extends Controller
 {
     public function index(Request $request)
     {
-        return Song::orderBy('created_at', 'desc')->get();
+        return \Auth::user()->songs()->get();
     }
 
     public function insert(Request $request)
