@@ -174,7 +174,7 @@ export default {
       }
       this.initHowl();
       if (currentSt === true) {
-        console.log('きてます');
+        console.log("きてます");
         this.audio.song.play();
       }
     },
