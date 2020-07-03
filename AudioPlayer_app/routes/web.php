@@ -15,4 +15,11 @@ use Illuminate\Support\Facades\Route;
 
 
 Auth::routes();
-Route::get('/', 'AudioPlayController@index');
+Route::get('/', function(){
+    return view('auth.login');
+});
+/*Route::get('/register', function(){
+    return view('auth.register');
+});*/
+Route::get('/player', 'AudioPlayController@index');
+Route::get('/api/songs', 'SongController@index');
